@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Circle Area Quest</title>
+<style>
+:root{--navy:#172b4d;--blue:#2463a6;--sky:#eaf4ff;--gold:#ffc857;--green:#147d64;--red:#a53742}*{box-sizing:border-box}body{margin:0;background:#eef3fa;color:var(--navy);font-family:system-ui,-apple-system,Segoe UI,sans-serif}header{background:linear-gradient(120deg,#17365c,#2678b9);color:white;padding:28px 18px;text-align:center}h1{margin:0;font-size:clamp(28px,5vw,42px)}header p{margin:7px 0}.wrap{max-width:940px;margin:20px auto;padding:0 16px 35px}.panel{background:white;border:1px solid #d9e5f0;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px #153b6310}.missions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.mission{padding:12px 8px;border:2px solid #d3e1ee;border-radius:12px;background:#f7fbff;color:#243b58;font-weight:750;cursor:pointer}.mission.active{background:#e2f2ff;border-color:#2770b6}.mission:disabled{opacity:.45;cursor:not-allowed}.bar{height:13px;background:#dbe6f0;border-radius:20px;overflow:hidden;margin:12px 0}.fill{height:100%;background:#2b997f;width:0;transition:width .25s}.meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700}.task{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}.diagram{background:#f8fbff;border:1px solid #dce9f5;border-radius:14px;min-height:240px;display:grid;place-items:center;padding:10px}svg{max-width:100%;height:auto}h2{margin:0 0 12px;font-size:23px}p{line-height:1.5}.answer{font-size:21px;padding:11px;width:180px;max-width:100%;border:2px solid #8daac6;border-radius:10px}button{font:inherit}.primary{background:#1767a6;color:white;border:0;border-radius:10px;padding:12px 18px;font-weight:800;cursor:pointer}.secondary{background:white;color:#175b95;border:2px solid #a9c5dc;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.feedback{font-weight:750;min-height:28px;margin-top:10px}.correct{color:var(--green)}.wrong{color:var(--red)}.hint{background:#fff8e5;border-left:4px solid #e2ab24;padding:10px;margin-top:10px;border-radius:5px}.formula{background:#eaf5ff;border-radius:10px;padding:12px;font-weight:700}.hidden{display:none}.finish{text-align:center;padding:25px}.small{font-size:13px;color:#4e6074}input:focus,button:focus-visible{outline:3px solid #ffca52;outline-offset:2px}@media(max-width:650px){.task{grid-template-columns:1fr}.missions{grid-template-columns:1fr}.panel{padding:15px}.diagram{min-height:190px}}
+</style></head><body><header><h1>◉ Circle Area Quest</h1><p>Three missions • 18 challenges • One area expert</p></header><main class="wrap">
+<section class="panel"><div class="missions" id="missions"></div><div class="meta" style="margin-top:16px"><span id="progressLabel">Mission 1 • Question 1 of 6</span><span id="score">0 / 18 correct</span></div><div class="bar"><div class="fill" id="fill"></div></div><div class="small">Use π = 3.14. Round to the nearest hundredth if needed. Enter numbers only (no units).</div></section>
+<section class="panel" id="game"><div class="task"><div><h2 id="title"></h2><p id="prompt"></p><div class="formula" id="formula"></div><p><label for="answer"><strong>Area = </strong></label><input class="answer" id="answer" type="number" step="any" inputmode="decimal" placeholder="Your answer"> <span id="unit">cm²</span></p><div class="actions"><button class="primary" id="check">Check answer</button><button class="secondary" id="hintButton">Show hint</button></div><div class="feedback" id="feedback" role="status" aria-live="polite"></div><div class="hint hidden" id="hint"></div><div class="actions"><button class="primary hidden" id="next">Next challenge →</button></div></div><div class="diagram" id="diagram" aria-label="Geometry diagram"></div></div></section>
+<section class="panel finish hidden" id="finish"><h2>🏆 Mission complete!</h2><p id="finishText"></p><button class="primary" id="restart">Play again</button></section>
+<section class="panel"><strong>How to play:</strong> Solve each diagram, check your answer, and advance through the missions. Mission 1 is circles, Mission 2 combines circles with rectangles and squares, and Mission 3 subtracts circular sections to find shaded area. Each correct answer unlocks the next challenge. <span class="small">Progress is saved on this device in this browser.</span></section>
+</main><script>
+const P=Math.PI; // display and calculate with 3.14, not actual pi
+const q=[
+{t:"Radius revealed",kind:"circle",r:4,measure:"radius",unit:"cm",a:50.24,h:"A = 3.14 × 4²."},
+{t:"Diameter detective",kind:"circle",r:6,measure:"diameter",unit:"m",a:113.04,h:"Diameter 12 means radius 6. A = 3.14 × 6²."},
+{t:"Small circle, big thinking",kind:"circle",r:3,measure:"radius",unit:"in",a:28.26,h:"A = 3.14 × 3²."},
+{t:"Half the diameter",kind:"circle",r:5,measure:"diameter",unit:"ft",a:78.5,h:"Diameter 10 means radius 5."},
+{t:"Area explorer",kind:"circle",r:7,measure:"radius",unit:"cm",a:153.86,h:"A = 3.14 × 7²."},
+{t:"Circle champion",kind:"circle",r:8,measure:"diameter",unit:"yd",a:200.96,h:"Diameter 16 means radius 8."},
+{t:"Rectangle + semicircle",kind:"rectsemi",w:12,hgt:8,r:4,unit:"cm",a:121.12,h:"Rectangle: 12 × 8 = 96. Semicircle: (3.14 × 4²) ÷ 2 = 25.12. Add."},
+{t:"Square + semicircle",kind:"squaresemi",w:10,r:5,unit:"m",a:139.25,h:"Square: 10 × 10 = 100. Semicircle: (3.14 × 5²) ÷ 2 = 39.25. Add."},
+{t:"Running track",kind:"track",w:14,hgt:6,r:3,unit:"ft",a:112.26,h:"The two semicircles form one full circle. Add 14 × 6 and 3.14 × 3²."},
+{t:"Rectangle + two semicircles",kind:"track",w:9,hgt:8,r:4,unit:"in",a:122.24,h:"Two semicircles make a circle. Add 9 × 8 and 3.14 × 4²."},
+{t:"Square + quarter circle",kind:"quarter",w:8,hgt:8,r:8,unit:"cm",a:114.24,h:"Square: 8 × 8. Quarter circle: (3.14 × 8²) ÷ 4. Add."},
+{t:"Rectangle + quarter circle",kind:"quarter",w:12,hgt:8,r:8,unit:"yd",a:146.24,h:"Rectangle: 12 × 8. Quarter circle: (3.14 × 8²) ÷ 4. Add."},
+{t:"Square with circular cutout",kind:"hole",w:12,r:4,unit:"cm",a:93.76,h:"Square: 12² = 144. Circle: 3.14 × 4² = 50.24. Subtract."},
+{t:"Rectangle with circular cutout",kind:"recthole",w:16,hgt:10,r:4,unit:"m",a:109.76,h:"Rectangle: 16 × 10 = 160. Circle: 3.14 × 4² = 50.24. Subtract."},
+{t:"Square minus semicircle",kind:"cutsemi",w:10,r:5,unit:"ft",a:60.75,h:"Square: 100. Semicircle: (3.14 × 5²) ÷ 2 = 39.25. Subtract."},
+{t:"Rectangle minus semicircle",kind:"rectcutsemi",w:14,hgt:8,r:4,unit:"in",a:86.88,h:"Rectangle: 112. Semicircle: (3.14 × 4²) ÷ 2 = 25.12. Subtract."},
+{t:"Square minus quarter circle",kind:"cutquarter",w:8,r:8,unit:"cm",a:13.76,h:"Square: 64. Quarter circle: (3.14 × 8²) ÷ 4 = 50.24. Subtract."},
+{t:"Rectangle minus quarter circle",kind:"rectcutquarter",w:12,hgt:8,r:8,unit:"yd",a:45.76,h:"Rectangle: 96. Quarter circle: 50.24. Subtract."}
+];
+const $=id=>document.getElementById(id);let index=0;let done=new Set();let locked=false;
+try{const saved=JSON.parse(localStorage.getItem("circleAreaQuest")||"{}");if(Array.isArray(saved.done)){done=new Set(saved.done.filter(n=>Number.isInteger(n)&&n>=0&&n<18));index=Math.min(Number.isInteger(saved.index)?saved.index:0,17);if(done.size===18)index=18;}}catch(e){}
+function save(){try{localStorage.setItem("circleAreaQuest",JSON.stringify({index,done:[...done]}))}catch(e){}}
+function svg(q){
+const start='<svg viewBox="0 0 340 245" role="img" aria-label="Diagram showing dimensions and shaded area"><defs><pattern id="shade" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#d5eafa"/><path d="M0 8L8 0" stroke="#9dc5e4" stroke-width="1"/></pattern></defs>';
+const end='</svg>';const tx=(x,y,s)=>`<text x="${x}" y="${y}" font-size="14" font-weight="700" fill="#1a385b" text-anchor="middle">${s}</text>`;
+const rect=(x,y,w,h,fill="url(#shade)")=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="#24486d" stroke-width="2.5"/>`;
+const path=(d,fill="url(#shade)")=>`<path d="${d}" fill="${fill}" stroke="#24486d" stroke-width="2.5" stroke-linejoin="round"/>`;
+const circle=(x,y,r,fill="url(#shade)")=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="#24486d" stroke-width="2.5"/>`;
+let s='';
+if(q.kind==="circle"){s+=circle(170,117,78);if(q.measure==="radius"){s+=`<line x1="170" y1="117" x2="248" y2="117" stroke="#b4463d" stroke-width="3"/>`+tx(209,107,`r = ${q.r} ${q.unit}`)}else{s+=`<line x1="92" y1="117" x2="248" y2="117" stroke="#b4463d" stroke-width="3"/>`+tx(170,106,`d = ${2*q.r} ${q.unit}`)}}
+if(q.kind==="rectsemi"){s+=rect(55,72,150,100)+path("M205 72 A50 50 0 0 1 205 172 Z");s+=tx(130,190,`${q.w} ${q.unit}`)+tx(35,125,`${q.hgt} ${q.unit}`)}
+if(q.kind==="squaresemi"){s+=rect(112,98,116,116)+path("M112 98 A58 58 0 0 1 228 98 Z");s+=tx(170,234,`${q.w} ${q.unit}`)}
+if(q.kind==="track"){s+=rect(100,83,140,92)+path("M100 83 A46 46 0 0 0 100 175 Z")+path("M240 83 A46 46 0 0 1 240 175 Z");s+=tx(170,195,`${q.w} ${q.unit}`)+tx(77,131,`${q.hgt} ${q.unit}`)}
+if(q.kind==="quarter"){s+=rect(54,90,130,110)+path("M184 90 A110 110 0 0 1 294 200 L184 200 Z");s+=tx(119,222,`${q.w} ${q.unit}`)+tx(35,150,`${q.hgt} ${q.unit}`)+tx(246,217,`r = ${q.r}`)}
+if(q.kind==="hole"||q.kind==="recthole"){const w=q.kind==="hole"?168:220,h=q.kind==="hole"?168:140,x=(340-w)/2,y=35;s+=rect(x,y,w,h)+circle(170,y+h/2,48,"white");s+=tx(170,y+h+21,`${q.w} ${q.unit}`)+tx(x-24,y+h/2,`${q.hgt||q.w} ${q.unit}`)+tx(170,y+h/2+5,`r = ${q.r}`)}
+if(q.kind==="cutsemi"||q.kind==="rectcutsemi"){let w=q.kind==="cutsemi"?150:210,h=q.kind==="cutsemi"?150:130,x=(340-w)/2,y=45;s+=rect(x,y,w,h);let rr=55;s+=path(`M${x+w/2-rr} ${y} A${rr} ${rr} 0 0 0 ${x+w/2+rr} ${y} Z`,"white");s+=tx(170,y+h+20,`${q.w} ${q.unit}`)+tx(x-20,y+h/2,`${q.hgt||q.w} ${q.unit}`)+tx(170,y+26,`d = ${q.r*2}`)}
+if(q.kind==="cutquarter"||q.kind==="rectcutquarter"){let w=q.kind==="cutquarter"?170:220,h=150,x=(340-w)/2,y=42;s+=rect(x,y,w,h);s+=path(`M${x} ${y} L${x+150} ${y} A150 150 0 0 1 ${x} ${y+150} Z`,"white");s+=tx(170,y+h+20,`${q.w} ${q.unit}`)+tx(x-21,y+90,`${q.hgt||q.w} ${q.unit}`)+tx(x+57,y+20,`r = ${q.r}`)}
+return start+s+end;
+}
+function render(){
+const m=Math.min(Math.floor(index/6),2);
+$('missions').innerHTML=["1 · Circle Basics","2 · Add the Parts","3 · Shaded Region"].map((s,i)=>`<button class="mission ${i===m?'active':''}" ${i>Math.floor(done.size/6)?'disabled':''} data-m="${i}">${s}${done.size>=(i+1)*6?' ✓':''}</button>`).join('');
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{index=Number(b.dataset.m)*6;render()});
+$('score').textContent=`${done.size} / 18 correct`;$('fill').style.width=`${done.size/18*100}%`;
+$('game').classList.toggle('hidden',index>=18);$('finish').classList.toggle('hidden',index<18);
+if(index>=18){$('finishText').textContent=`You solved all 18 area challenges! Score: ${done.size}/18.`;save();return}
+const item=q[index];locked=done.has(index);
+$('progressLabel').textContent=`Mission ${m+1} • Question ${index%6+1} of 6`;
+$('title').textContent=`${index+1}. ${item.t}`;
+$('prompt').textContent=m===0?'Find the area of the circle.':m===1?'Find the total area of the combined shape.':'Find the SHADED area. The white section is removed.';
+$('formula').textContent=m===0?'Circle: A = 3.14 × r²':m===1?'Add the areas of the parts. Circle: A = 3.14 × r²':'Shaded area = whole area − removed area';
+$('diagram').innerHTML=svg(item);$('unit').textContent=item.unit+'²';$('answer').value=locked?item.a:'';$('answer').disabled=locked;
+$('feedback').textContent=locked?'✓ Already solved!':'';
+$('feedback').className='feedback '+(locked?'correct':'');$('hint').classList.add('hidden');$('hint').textContent=item.h;
+$('check').disabled=locked;$('next').classList.toggle('hidden',!locked);$('next').textContent=index===17?'See results →':index%6===5?'Next mission →':'Next challenge →';
+}
+$('check').onclick=()=>{if(locked)return;const raw=$('answer').value;if(raw.trim()===''){ $('feedback').textContent='Enter your answer first.';return}
+const val=Number(raw),item=q[index];if(Number.isFinite(val)&&Math.abs(val-item.a)<.011){done.add(index);locked=true;save();$('feedback').textContent='✓ Correct! Excellent area work.';$('feedback').className='feedback correct';$('answer').disabled=true;$('check').disabled=true;$('next').classList.remove('hidden');$('next').textContent=index===17?'See results →':index%6===5?'Next mission →':'Next challenge →';$('score').textContent=`${done.size} / 18 correct`;$('fill').style.width=`${done.size/18*100}%`;}else{$('feedback').textContent='Not quite. Check your radius and whether to add or subtract, then try again.';$('feedback').className='feedback wrong';}};
+$('answer').addEventListener('keydown',e=>{if(e.key==='Enter'&&!locked)$('check').click();else if(e.key==='Enter'&&locked)$('next').click()});
+$('hintButton').onclick=()=>$('hint').classList.toggle('hidden');
+$('next').onclick=()=>{index++;save();render();window.scrollTo({top:0,behavior:'smooth'})};
+$('restart').onclick=()=>{done=new Set();index=0;save();render()};
+render();
+</script></body></html>
